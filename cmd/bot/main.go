@@ -11,7 +11,14 @@ import (
 )
 
 func main() {
+	log := log.New(os.Stdout, "[MyBot] ", log.Lshortfile|log.Lmicroseconds)
 
+	if err := run(log); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run(log *log.Logger) error {
 	config := struct {
 		conf.Version
 		Bot struct {
@@ -30,30 +37,33 @@ func main() {
 		case conf.ErrHelpWanted:
 			usage, _ := conf.Usage("MyBot", &config)
 
-			log.Println(usage)
-			return
+			_, err := fmt.Fprint(log.Writer(), usage)
+			return err
 		case conf.ErrVersionWanted:
 			version, _ := conf.VersionString("MyBot", &config)
 
-			log.Println(version)
-			return
+			_, err := fmt.Fprint(log.Writer(), version)
+			return err
 		}
+		return err
 	}
 
 	discord, err := discordgo.New("Bot " + config.Bot.Token)
-	fmt.Println(discord, err)
+	if err != nil {
+		return err
+	}
 
 	discord.AddHandler(messageCreate)
 
 	if err = discord.Open(); err != nil {
-		fmt.Println(err)
+		return err
 	}
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
-	discord.Close()
+	return discord.Close()
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
