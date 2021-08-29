@@ -59,13 +59,14 @@ func run(log *log.Logger) error {
 		return err
 	}
 
-	router := router.New(log, "%")
-	router.AddCommand(&commands.VampetacoCmd)
+	r := router.New(log, "%")
+	r.AddCommand(&commands.VampetacoCmd)
+	r.AddCommand(&commands.DeleteMsgCmd)
 
 	log.Println("Adicionando Handler.")
 
 	discord.AddHandler(ready)
-	discord.AddHandler(router.OnCreateMessage)
+	discord.AddHandler(r.OnCreateMessage)
 
 	log.Println("Abrindo websocket.")
 	if err = discord.Open(); err != nil {
