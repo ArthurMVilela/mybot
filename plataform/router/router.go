@@ -16,7 +16,7 @@ type Router struct {
 type Command struct {
 	Name        string
 	Description string
-	Action      func(s *discordgo.Session, m *discordgo.MessageCreate)
+	Action      func(s *discordgo.Session, m *discordgo.MessageCreate) error
 }
 
 func New(log *log.Logger, commandMarker string) *Router {

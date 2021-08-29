@@ -2,7 +2,6 @@ package commands
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"log"
 	"math/rand"
 	"mybot/plataform/router"
 	"strconv"
@@ -38,28 +37,73 @@ var vampsPicsNSFW = []string{
 	"https://pbs.twimg.com/media/EWk33IhXkAInuEk.jpg",
 }
 
-func vampetaco(s *discordgo.Session, m *discordgo.MessageCreate) {
+func vampetaco(s *discordgo.Session, m *discordgo.MessageCreate) error {
 	args := strings.Fields(m.Content)
-	mode := strings.ToLower(args[1])
-	if mode != "sfw" && mode != "nsfw" {
-		mode = "sfw"
+
+	if len(args) < 2 {
+		_, err := s.ChannelMessageSendReply(
+			m.Message.ChannelID,
+			"Argumentos inválido. Use %vampetaco help para ajuda.",
+			m.Reference())
+		return err
 	}
 
-	amount, err := strconv.ParseInt(args[2], 10, 32)
-	if err != nil {
-		return
+	if args[1] == "help" {
+		helpEmbed := discordgo.MessageEmbed{
+			Title:       "Vampetaço",
+			Description: "Invoca um vampetaço.\nvantepaco [modo] [quantidade]\n",
+			Color:       0x009933,
+			Thumbnail: &discordgo.MessageEmbedThumbnail{
+				URL: "https://images-ext-2.discordapp.net/external/idiAcv_r_YZKpij2_eZJ_eekhYPt71rBKa9s4bhv72I/https/pbs.twimg.com/media/EUfH4EVXYAIeVGh.jpg?width=515&height=684",
+			},
+			Fields: []*discordgo.MessageEmbedField{
+				&discordgo.MessageEmbedField{
+					Name:   "modo",
+					Value:  "O modo das fotos, deve ser SFW NSFW ou ambos ",
+					Inline: false,
+				},
+				&discordgo.MessageEmbedField{
+					Name:   "quantidade",
+					Value:  "Quantidade de Vampetas, mínimo 1, máximo 50. ",
+					Inline: false,
+				},
+			},
+		}
+		_, err := s.ChannelMessageSendEmbed(m.ChannelID, &helpEmbed)
+		return err
 	}
 
 	var pics []string
 
-	if mode == "sfw" {
+	mode := strings.ToLower(args[1])
+
+	switch mode {
+	case "sfw":
 		pics = vampsPicsSFW
-	} else {
+	case "nsfw":
 		pics = vampsPicsNSFW
+	case "ambos":
+		pics = append(vampsPicsSFW, vampsPicsNSFW...)
+	default:
+		_, err := s.ChannelMessageSendReply(
+			m.Message.ChannelID,
+			"Argumentos inválido. Use %vampetaco help para ajuda.",
+			m.Reference())
+		return err
 	}
 
+	amount, err := strconv.ParseInt(args[2], 10, 32)
+	if err != nil || (amount < 1 || amount > 50) {
+		_, err := s.ChannelMessageSendReply(
+			m.Message.ChannelID,
+			"Argumentos inválido. Use %vampetaco help para ajuda.",
+			m.Reference())
+		return err
+	}
+
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
 	for i := 0; i < int(amount); i++ {
-		r := rand.New(rand.NewSource(time.Now().UnixNano()))
 		index := r.Intn(len(pics) - 1)
 		picUrl := pics[index]
 
@@ -70,7 +114,10 @@ func vampetaco(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 
 		_, err := s.ChannelMessageSendEmbed(m.ChannelID, &embeded)
-		log.Println(err)
-
+		if err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
