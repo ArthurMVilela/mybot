@@ -5,6 +5,7 @@ import (
 	"github.com/ardanlabs/conf"
 	"github.com/bwmarrin/discordgo"
 	"log"
+	"mybot/plataform/commands"
 	"mybot/plataform/router"
 	"os"
 	"os/signal"
@@ -59,6 +60,7 @@ func run(log *log.Logger) error {
 	}
 
 	router := router.New(log, "%")
+	router.AddCommand(&commands.VampetacoCmd)
 
 	log.Println("Adicionando Handler.")
 

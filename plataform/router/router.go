@@ -23,6 +23,10 @@ func New(log *log.Logger, commandMarker string) *Router {
 	return &Router{log: log, commandMaker: commandMarker}
 }
 
+func (r *Router) AddCommand(c *Command) {
+	r.commands = append(r.commands, c)
+}
+
 func (r *Router) parseCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
 	textMessage := m.Content
 	fields := strings.Fields(textMessage)
