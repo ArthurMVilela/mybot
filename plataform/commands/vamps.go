@@ -92,6 +92,23 @@ func vampetaco(s *discordgo.Session, m *discordgo.MessageCreate) error {
 		return err
 	}
 
+	channel, err := s.Channel(m.ChannelID)
+	if err != nil {
+		_, err := s.ChannelMessageSendReply(
+			m.Message.ChannelID,
+			"Ocorreu um erro inesperado.",
+			m.Reference())
+		return err
+	}
+
+	if !channel.NSFW && (mode == "nsfw" || mode == "ambos") {
+		_, err := s.ChannelMessageSendReply(
+			m.Message.ChannelID,
+			"Este canal não é nsfw, so se pode colocar imagens nsfw em canais nsfw.",
+			m.Reference())
+		return err
+	}
+
 	amount, err := strconv.ParseInt(args[2], 10, 32)
 	if err != nil || (amount < 1 || amount > 50) {
 		_, err := s.ChannelMessageSendReply(
