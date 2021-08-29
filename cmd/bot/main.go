@@ -5,6 +5,7 @@ import (
 	"github.com/ardanlabs/conf"
 	"github.com/bwmarrin/discordgo"
 	"log"
+	"mybot/plataform/router"
 	"os"
 	"os/signal"
 	"syscall"
@@ -19,6 +20,8 @@ func main() {
 }
 
 func run(log *log.Logger) error {
+	log.Println("Iniciando Bot.")
+
 	config := struct {
 		conf.Version
 		Bot struct {
@@ -31,6 +34,7 @@ func run(log *log.Logger) error {
 		},
 	}
 
+	log.Println("Lendo configurações.")
 	// parse configurations
 	if err := conf.Parse(os.Args[1:], "MyBot", &config); err != nil {
 		switch err {
@@ -48,13 +52,20 @@ func run(log *log.Logger) error {
 		return err
 	}
 
+	log.Println("Autentificando bot.")
 	discord, err := discordgo.New("Bot " + config.Bot.Token)
 	if err != nil {
 		return err
 	}
 
-	discord.AddHandler(messageCreate)
+	router := router.New(log, "%")
 
+	log.Println("Adicionando Handler.")
+
+	discord.AddHandler(ready)
+	discord.AddHandler(router.OnCreateMessage)
+
+	log.Println("Abrindo websocket.")
 	if err = discord.Open(); err != nil {
 		return err
 	}
@@ -63,35 +74,10 @@ func run(log *log.Logger) error {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
+	log.Println("Fechando websocket.")
 	return discord.Close()
 }
 
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-
-	if m.Content != "ping" {
-		return
-	}
-
-	channel, err := s.UserChannelCreate(m.Author.ID)
-	if err != nil {
-		fmt.Println("error creating channel:", err)
-		s.ChannelMessageSend(
-			m.ChannelID,
-			"Something went wrong while sending the DM!",
-		)
-		return
-	}
-
-	_, err = s.ChannelMessageSend(channel.ID, "Pong!")
-	if err != nil {
-		fmt.Println("error sending DM message:", err)
-		s.ChannelMessageSend(
-			m.ChannelID,
-			"Failed to send you a DM. "+
-				"Did you disable DM in your privacy settings?",
-		)
-	}
+func ready(s *discordgo.Session, r *discordgo.Ready) {
+	log.Println("ready")
 }
