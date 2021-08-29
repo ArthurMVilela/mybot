@@ -55,7 +55,9 @@ func (r *Router) parseCommand(s *discordgo.Session, m *discordgo.MessageCreate) 
 
 	for _, cmd := range r.commands {
 		if cmd.Name == command {
-			cmd.Action(s, m)
+			if err := cmd.Action(s, m); err != nil {
+				r.log.Printf("Um erro inexperado ocorreu: %v", err)
+			}
 			return
 		}
 	}
