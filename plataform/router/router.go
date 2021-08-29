@@ -31,6 +31,20 @@ func (r *Router) parseCommand(s *discordgo.Session, m *discordgo.MessageCreate) 
 		return
 	}
 
+	permissions, _ := s.UserChannelPermissions(m.Message.Author.ID, m.Message.ChannelID)
+	adm := (permissions & discordgo.PermissionAdministrator) == discordgo.PermissionAdministrator
+
+	if !adm {
+		_, err := s.ChannelMessageSendReply(
+			m.Message.ChannelID,
+			fmt.Sprintf("Somente administradores podem usar comandos."),
+			m.Reference())
+		if err != nil {
+			r.log.Println(err)
+		}
+		return
+	}
+
 	command := fields[0][1:]
 	values := fields[1:]
 	r.log.Println(command, values)
